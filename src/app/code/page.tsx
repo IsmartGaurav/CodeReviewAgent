@@ -37,22 +37,6 @@ const IGNORED_FOLDERS = [
   'build',
 ];
 
-const IGNORED_EXTENSIONS = [
-  // Images
-  '.jpg', '.jpeg', '.png', '.gif', '.svg', '.ico', '.webp', '.bmp', '.tiff',
-  // Media
-  '.mp4', '.webm', '.mov', '.avi', '.mkv', '.flv',
-  '.mp3', '.wav', '.ogg', '.m4a', '.aac',
-  // Archives
-  '.zip', '.rar', '.7z', '.tar', '.gz', '.bz2',
-  // Documents
-  '.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx',
-  // Fonts
-  '.ttf', '.woff', '.woff2', '.eot', '.otf',
-  // Other binary files
-  '.exe', '.dll', '.so', '.dylib',
-];
-
 const ALLOWED_EXTENSIONS = [
   // Code files
   '.js', '.jsx', '.ts', '.tsx', '.html', '.css', '.scss', '.sass',
