@@ -1,9 +1,15 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Octokit } from '@octokit/rest';
 import { useRouter } from 'next/navigation';
 import { useCode } from '@/lib/context/CodeContext';
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { AlertCircle, CheckCircle, ArrowRight, XCircle, Loader2 } from "lucide-react";
 
 interface FileData {
   name: string;
@@ -49,12 +55,29 @@ const ALLOWED_EXTENSIONS = [
 
 export default function CodeFetcher() {
   const router = useRouter();
-  const { setFetchedFiles } = useCode();
+  const { setFetchedFiles, fetchedFiles, clearSavedData } = useCode();
   const [repoUrl, setRepoUrl] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [progress, setProgress] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [isComplete, setIsComplete] = useState(false);
+  const [loadedFromCache, setLoadedFromCache] = useState(false);
+
+  // Check if we have cached data on mount
+  useEffect(() => {
+    if (fetchedFiles.length > 0) {
+      setIsComplete(true);
+      setLoadedFromCache(true);
+    }
+  }, [fetchedFiles]);
+
+  const handleClearData = () => {
+    clearSavedData();
+    setIsComplete(false);
+    setLoadedFromCache(false);
+    setProgress([]);
+    setRepoUrl('');
+  };
 
   const shouldIgnoreFile = (name: string, path: string): boolean => {
     // Check if file is in the ignored list
@@ -185,72 +208,138 @@ export default function CodeFetcher() {
   };
 
   return (
-    <div className="container mx-auto p-4 max-w-2xl">
-      <h1 className="text-2xl font-bold mb-6">GitHub Repository Fetcher</h1>
-      
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label htmlFor="repoUrl" className="block text-sm font-medium mb-2">
-            Repository URL
-          </label>
-          <input
-            type="text"
-            id="repoUrl"
-            value={repoUrl}
-            onChange={(e) => setRepoUrl(e.target.value)}
-            placeholder="https://github.com/username/repository"
-            className="w-full p-2 border rounded-md"
-            required
-          />
+    <div className="flex flex-col min-h-screen bg-[#181825] text-white">
+      <div className="container mx-auto p-6 max-w-3xl">
+        <div className="mb-6">
+          <h1 className="text-2xl font-bold mb-2">Code Repository Fetcher</h1>
+          <p className="text-gray-400">Fetch a GitHub repository to analyze and review its code</p>
         </div>
         
-        <button
-          type="submit"
-          disabled={isLoading}
-          className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 disabled:bg-blue-300"
-        >
-          {isLoading ? 'Fetching...' : 'Fetch Repository'}
-        </button>
-      </form>
+        {loadedFromCache && (
+          <Card className="mb-6 bg-[#1e1e2e] border border-[#313244]">
+            <CardContent className="flex justify-between items-center p-4">
+              <div className="flex items-center">
+                <CheckCircle className="h-5 w-5 text-green-400 mr-2" />
+                <span className="text-gray-200">Repository loaded from saved data.</span>
+              </div>
+              <div className="flex space-x-3">
+                <Button
+                  onClick={handleClearData}
+                  variant="outline"
+                  className="border-[#313244] hover:bg-[#313244] text-red-400 hover:text-red-300"
+                >
+                  Clear Data
+                </Button>
+                <Button
+                  onClick={handleReview}
+                  variant="default"
+                  className="bg-blue-600 hover:bg-blue-700"
+                >
+                  <span>Go to Code Review</span>
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+        
+        <Card className="bg-[#1e1e2e] border border-[#313244]">
+          <CardHeader>
+            <CardTitle>Repository URL</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <Input
+                  id="repoUrl"
+                  value={repoUrl}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setRepoUrl(e.target.value)}
+                  placeholder="https://github.com/username/repository"
+                  className="w-full bg-[#252538] border-[#313244] text-white"
+                  required
+                />
+              </div>
+              
+              <Button
+                type="submit"
+                disabled={isLoading}
+                className="bg-blue-600 hover:bg-blue-700 disabled:bg-blue-800/50 disabled:text-blue-100/70"
+              >
+                {isLoading ? (
+                  <span className="flex items-center">
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Fetching...
+                  </span>
+                ) : (
+                  'Fetch Repository'
+                )}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
 
-      {error && (
-        <div className="mt-4 p-4 bg-red-100 text-red-700 rounded-md">
-          {error}
-        </div>
-      )}
+        {error && (
+          <Card className="mt-4 bg-red-900/20 border border-red-800">
+            <CardContent className="p-4 flex items-start">
+              <AlertCircle className="h-5 w-5 text-red-400 mr-2 mt-0.5" />
+              <span className="text-red-300">{error}</span>
+            </CardContent>
+          </Card>
+        )}
 
-      {isLoading && (
-        <div className="mt-4">
-          <div className="animate-pulse">
-            <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
-            <div className="h-4 bg-gray-200 rounded w-1/2"></div>
-          </div>
-        </div>
-      )}
+        {isLoading && !progress.length && (
+          <Card className="mt-4 bg-[#1e1e2e] border border-[#313244]">
+            <CardContent className="p-4">
+              <div className="animate-pulse space-y-2">
+                <div className="h-4 bg-[#313244] rounded w-3/4"></div>
+                <div className="h-4 bg-[#313244] rounded w-1/2"></div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
-      {progress.length > 0 && (
-        <div className="mt-6">
-          <h2 className="text-xl font-semibold mb-3">Progress:</h2>
-          <ul className="space-y-2 max-h-60 overflow-y-auto">
-            {progress.map((item, index) => (
-              <li key={index} className="p-2 bg-gray-50 rounded-md text-sm">
-                {item}
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
+        {progress.length > 0 && (
+          <Card className="mt-6 bg-[#1e1e2e] border border-[#313244]">
+            <CardHeader className="pb-2">
+              <div className="flex justify-between items-center">
+                <CardTitle>Progress</CardTitle>
+                <Badge variant="outline" className="bg-blue-900/30 text-blue-300 border-blue-800">
+                  {progress.length} Items
+                </Badge>
+              </div>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <ScrollArea className="h-[250px] rounded-md">
+                <div className="space-y-1 pr-4">
+                  {progress.map((item, index) => (
+                    <div key={index} className="p-2 text-sm bg-[#252538] rounded-md">
+                      {item}
+                    </div>
+                  ))}
+                </div>
+              </ScrollArea>
+            </CardContent>
+          </Card>
+        )}
 
-      {isComplete && (
-        <div className="mt-6">
-          <button
-            onClick={handleReview}
-            className="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600"
-          >
-            Go to Code Review
-          </button>
-        </div>
-      )}
+        {isComplete && !loadedFromCache && (
+          <Card className="mt-6 bg-green-900/20 border border-green-800">
+            <CardContent className="p-4 flex justify-between items-center">
+              <div className="flex items-center">
+                <CheckCircle className="h-5 w-5 text-green-400 mr-2" />
+                <span className="text-green-300">Repository fetched successfully!</span>
+              </div>
+              <Button
+                onClick={handleReview}
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                <span>Go to Code Review</span>
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+      </div>
     </div>
   );
 } 

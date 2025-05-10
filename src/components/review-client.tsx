@@ -8,12 +8,18 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { 
+  ResizablePanelGroup, 
+  ResizablePanel, 
+  ResizableHandle 
+} from "@/components/ui/resizable";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { CodeReview } from "./code-review";
 import { FileContent } from "./file-content";
 import { Badge } from "./ui/badge";
+import { FolderIcon, FileIcon } from "lucide-react";
 
 export function ReviewClient({
   files,
@@ -112,66 +118,89 @@ export function ReviewClient({
   };
 
   return (
-    <div className='grid grid-cols-1 lg:grid-cols-4 gap-6'>
-      <Card className='border-2 border-pink-200'>
-        <CardHeader>
-          <CardTitle>ᛋ Project Files</CardTitle>
-          <CardDescription>
-            Select a file to review. I&apos;ll give you a detailed analysis of
-            the code, including security vulnerabilities, code style, and
-            performance optimizations.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className='flex-1'>
-          <div className='h-[650px]'>
-            <ScrollArea className='h-full'>
-              <div className='space-y-2'>
+    <ResizablePanelGroup direction="horizontal" className="h-[calc(100vh-3.5rem)] w-full">
+      {/* Project Files Panel - 1/3 of space */}
+      <ResizablePanel defaultSize={33.3} minSize={20}>
+        <Card className="h-full rounded-none border-0 shadow-none bg-[#1e1e2e]">
+          <CardHeader className="border-b border-[#313244] bg-[#1e1e2e]">
+            <CardTitle className="text-white text-base flex items-center gap-2">
+              <FolderIcon className="h-4 w-4 text-yellow-400" />
+              <span>Project Files</span>
+            </CardTitle>
+            <CardDescription className="text-gray-400 text-xs">
+              Select a file to review for code analysis.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="flex-1 p-0 bg-[#1e1e2e]">
+            <ScrollArea className="h-[calc(100vh-8rem)] pb-4">
+              <div className="px-3 py-2">
                 {files.length === 0 ? (
-                  <p className='text-muted-foreground'>Loading files...</p>
+                  <p className="text-gray-500 text-center py-4">Loading files...</p>
                 ) : (
-                  files.map((file) => (
-                    <Link
-                      href={`?path=${file}`}
-                      key={file}
-                      className={`p-4 rounded-lg cursor-pointer transition-colors`}
-                    >
-                      <div className='flex items-center justify-between'>
-                        <span
-                          className={cn(
-                            "font-mono",
-                            file === currentFile && "text-purple-600 font-bold"
+                  <div className="space-y-1">
+                    {files.map((file) => (
+                      <Link
+                        href={`?path=${file}`}
+                        key={file}
+                        className={`block px-3 py-2 rounded cursor-pointer transition-colors ${
+                          file === currentFile 
+                            ? 'bg-[#313244] hover:bg-[#313244]' 
+                            : 'hover:bg-[#28283c]'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2 truncate">
+                            <FileIcon className="h-3.5 w-3.5 text-blue-400 flex-shrink-0" />
+                            <span
+                              className={cn(
+                                "font-mono text-xs truncate max-w-[170px]",
+                                file === currentFile 
+                                  ? "text-blue-300 font-medium" 
+                                  : "text-gray-300"
+                              )}
+                            >
+                              {file}
+                            </span>
+                          </div>
+                          {file === currentFile && (
+                            <Badge className="bg-blue-900/50 text-blue-300 hover:bg-blue-800/60 text-[10px] px-1.5 py-0">
+                              Current
+                            </Badge>
                           )}
-                        >
-                          {file}
-                        </span>
-                        {file === currentFile && (
-                          <Badge className='bg-purple-600/10 text-purple-600'>
-                            Selected
-                          </Badge>
-                        )}
-                      </div>
-                    </Link>
-                  ))
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
                 )}
               </div>
             </ScrollArea>
-          </div>
-        </CardContent>
-      </Card>
-
-      <FileContent
-        selectedFile={currentFile}
-        fileContent={selectedFile.content || ""}
-        highlightedLines={highlightedLines}
-        lineComments={lineComments}
-        onLineClick={handleLineClick}
-        setReview={setReview}
-        showDialog={showDialog}
-        selectedLine={selectedLine}
-        onCloseDialog={handleCloseDialog}
-      />
-
-      <CodeReview review={review} />
-    </div>
+          </CardContent>
+        </Card>
+      </ResizablePanel>
+      
+      <ResizableHandle className="bg-[#313244] w-[1px]" withHandle />
+      
+      {/* File Content Panel - 1/3 of space */}
+      <ResizablePanel defaultSize={33.3} minSize={30}>
+        <FileContent
+          selectedFile={currentFile}
+          fileContent={selectedFile.content || ""}
+          highlightedLines={highlightedLines}
+          lineComments={lineComments}
+          onLineClick={handleLineClick}
+          setReview={setReview}
+          showDialog={showDialog}
+          selectedLine={selectedLine}
+          onCloseDialog={handleCloseDialog}
+        />
+      </ResizablePanel>
+      
+      <ResizableHandle className="bg-[#313244] w-[1px]" withHandle />
+      
+      {/* Code Review Panel - 1/3 of space */}
+      <ResizablePanel defaultSize={33.3} minSize={20}>
+        <CodeReview review={review} />
+      </ResizablePanel>
+    </ResizablePanelGroup>
   );
 }

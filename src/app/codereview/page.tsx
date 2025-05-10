@@ -2,32 +2,52 @@
 
 import { useSearchParams } from 'next/navigation';
 import { useCode } from '@/lib/context/CodeContext';
-import { FileContent } from '@/components/file-content';
-import { useState, MouseEvent, Suspense } from 'react';
+import { useState, Suspense } from 'react';
+import { ReviewClient } from "@/components/review-client";
+import { Button } from "@/components/ui/button";
+import { ArrowLeftIcon } from "lucide-react";
 
 function CodeReviewContent() {
   const searchParams = useSearchParams();
   const { fetchedFiles } = useCode();
-  const path = searchParams.get('path') || undefined;
-  const [showDialog, setShowDialog] = useState<boolean>(false);
-  const [selectedLine, setSelectedLine] = useState<number | null>(null);
-
-  const handleLineClick = (lineNumber: number, e: MouseEvent<Element>) => {
-    e.preventDefault();
-    setSelectedLine(lineNumber);
-    setShowDialog(true);
-  };
-
-  const handleCloseDialog = () => {
-    setShowDialog(false);
-    setSelectedLine(null);
-  };
+  const path = searchParams.get('path') || '';
 
   if (!fetchedFiles || fetchedFiles.length === 0) {
     return (
-      <div className="container mx-auto p-4">
-        <h1 className="text-2xl font-bold mb-4">No Files Selected</h1>
-        <p>Please go back to the code page and fetch a repository first.</p>
+      <div className="flex flex-col items-center justify-center min-h-screen bg-[#181825] w-full">
+        <div className="bg-[#1e1e2e] p-8 rounded-lg shadow-sm border border-[#313244] max-w-lg text-center">
+          <div className="mb-6 flex justify-center">
+            <div className="rounded-full bg-red-900/20 p-4">
+              <svg 
+                xmlns="http://www.w3.org/2000/svg" 
+                width="24" 
+                height="24" 
+                viewBox="0 0 24 24" 
+                fill="none" 
+                stroke="currentColor" 
+                strokeWidth="2" 
+                strokeLinecap="round" 
+                strokeLinejoin="round" 
+                className="text-red-400"
+              >
+                <path d="M18 6 6 18" />
+                <path d="m6 6 12 12" />
+              </svg>
+            </div>
+          </div>
+          <h1 className="text-2xl font-bold mb-4 text-white">No Files Selected</h1>
+          <p className="text-gray-400 mb-6">Please go back to the code page and fetch a repository first.</p>
+          <Button 
+            asChild
+            variant="default" 
+            className="bg-blue-600 hover:bg-blue-700"
+          >
+            <a href="/code">
+              <ArrowLeftIcon className="h-4 w-4 mr-2" />
+              Go to Repository Fetcher
+            </a>
+          </Button>
+        </div>
       </div>
     );
   }
@@ -36,48 +56,32 @@ function CodeReviewContent() {
   const fileContent = selectedFile?.content || '';
 
   return (
-    <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-4">Code Review</h1>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="border rounded-lg p-4">
-          <h2 className="text-xl font-semibold mb-2">Files</h2>
-          <ul className="space-y-2">
-            {fetchedFiles.map((file) => (
-              <li key={file.path}>
-                <button
-                  onClick={() => {
-                    const url = new URL(window.location.href);
-                    url.searchParams.set('path', file.path);
-                    window.history.pushState({}, '', url);
-                  }}
-                  className={`text-left w-full p-2 rounded ${
-                    path === file.path ? 'bg-blue-100' : 'hover:bg-gray-100'
-                  }`}
-                >
-                  {file.path}
-                </button>
-              </li>
-            ))}
-          </ul>
+    <div className="flex flex-col h-screen bg-[#181825]">
+      <div className="flex items-center px-4 py-2 border-b border-[#313244]">
+        <h1 className="text-xl font-bold text-white">Code Review AI</h1>
+        <span className="ml-3 px-2 py-0.5 text-xs bg-blue-900/30 text-blue-300 rounded-full">
+          {fetchedFiles.length} Files
+        </span>
+        <div className="ml-auto">
+          <Button 
+            asChild
+            variant="outline" 
+            size="sm"
+            className="text-black border-[#313244] hover:bg-[#313244] hover:text-white"
+          >
+            <a href="/code">
+              <ArrowLeftIcon className="h-3 w-3 mr-1" />
+              Back
+            </a>
+          </Button>
         </div>
-        <div className="border rounded-lg p-4">
-          <h2 className="text-xl font-semibold mb-2">File Content</h2>
-          {path ? (
-            <FileContent
-              selectedFile={path}
-              fileContent={fileContent}
-              highlightedLines={[]}
-              lineComments={{}}
-              onLineClick={handleLineClick}
-              setReview={() => {}}
-              showDialog={showDialog}
-              selectedLine={selectedLine}
-              onCloseDialog={handleCloseDialog}
-            />
-          ) : (
-            <p>Select a file to view its content</p>
-          )}
-        </div>
+      </div>
+      <div className="flex-1 overflow-hidden">
+        <ReviewClient
+          files={fetchedFiles.map(f => f.path)}
+          selectedFile={{ content: fileContent }}
+          file={path}
+        />
       </div>
     </div>
   );
@@ -86,21 +90,27 @@ function CodeReviewContent() {
 export default function CodeReviewPage() {
   return (
     <Suspense fallback={
-      <div className="container mx-auto p-4">
-        <div className="animate-pulse">
-          <div className="h-8 bg-gray-200 rounded w-1/4 mb-4"></div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="border rounded-lg p-4">
-              <div className="h-6 bg-gray-200 rounded w-1/3 mb-2"></div>
-              <div className="space-y-2">
-                <div className="h-4 bg-gray-200 rounded"></div>
-                <div className="h-4 bg-gray-200 rounded"></div>
-                <div className="h-4 bg-gray-200 rounded"></div>
+      <div className="h-screen w-full bg-[#181825] flex items-center justify-center">
+        <div className="animate-pulse flex flex-col items-center">
+          <div className="h-8 w-32 bg-[#313244] rounded mb-8"></div>
+          <div className="w-[90%] max-w-6xl h-[80vh] bg-[#1e1e2e] rounded-lg overflow-hidden">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-px bg-[#313244] h-full">
+              <div className="bg-[#1e1e2e] p-4">
+                <div className="h-6 bg-[#313244] rounded w-1/3 mb-4"></div>
+                <div className="space-y-3">
+                  {[...Array(6)].map((_, i) => (
+                    <div key={i} className="h-5 bg-[#313244] rounded"></div>
+                  ))}
+                </div>
               </div>
-            </div>
-            <div className="border rounded-lg p-4">
-              <div className="h-6 bg-gray-200 rounded w-1/3 mb-2"></div>
-              <div className="h-64 bg-gray-200 rounded"></div>
+              <div className="bg-[#1e1e2e]">
+                <div className="h-10 bg-[#313244]"></div>
+                <div className="h-[calc(100%-2.5rem)] bg-[#252538]"></div>
+              </div>
+              <div className="bg-[#1e1e2e]">
+                <div className="h-10 bg-[#313244]"></div>
+                <div className="h-[calc(100%-2.5rem)] bg-[#252538]"></div>
+              </div>
             </div>
           </div>
         </div>
