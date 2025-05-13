@@ -312,7 +312,7 @@ export default function CodeFetcher() {
               <ScrollArea className="h-[250px] rounded-md">
                 <div className="space-y-1 pr-4">
                   {progress.map((item, index) => (
-                    <div key={index} className="p-2 text-sm bg-[#252538] rounded-md">
+                    <div key={index} className="p-2 text-sm text-white bg-[#252538] rounded-md">
                       {item}
                     </div>
                   ))}
